@@ -7,7 +7,7 @@ cat tetrice_dat.asm > cetrisdt.asm
 echo -e "versionString:\n .db \""${1:-$(date -u +%H:%M)}"\",0\nversionStringEnd:\nversionStringSize = versionStringEnd-versionString" >> cetrisdt.asm
 spasm -E -T cetrisdt.asm bin/CETRISDT.8xp
 spasm -E -L cetrisdt.asm
-tools/convbin -j 8x -k 8xv -i bin/CETRISDT.8xp -o bin/CETrisDT.8xv -n CETrisDT
+convbin -j 8x -k 8xv -i bin/CETRISDT.8xp -o bin/CETrisDT.8xv -n CETrisDT
 echo Creating and building CETRIS
 cat tetrice.asm graphic.asm > cetris.asm
 if [ $2 ]; then
