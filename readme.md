@@ -47,6 +47,15 @@ The default build setup uses the current time as the version indicator. To build
 
 Just add any second argument, for example `./build.sh v0.8 1` to build with the Cesium header (this is the version with an icon, which adds about 300 bytes but looks nicer in shells). Note that the verison number in the header is currently separate from the in-program displayed version; make sure to modify tetrice.asm if building this way and you want matching versions.
 
+## Building with nix
+Run `nix build` to build the default version of CETris. This will include an icon for shells that support it. The artifacts live in `result`.
+
+Run `nix flake show` to show all possible outputs from the flake.
+
+To build without the shell icon, run `nix build .#cetris_without_icon`.
+
+Run `nix fmt flake.nix` to run fomatting on the flake.
+
 # Useful Resources 
 ## Tools
 * ez80 Notepad++ highlighting from https://www.cemetech.net/forum/viewtopic.php?p=243171#243171)

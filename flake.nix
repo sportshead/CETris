@@ -4,66 +4,69 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = {
-    nixpkgs,
-    flake-utils,
-    ...
-  }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      ...
+    }:
     flake-utils.lib.eachDefaultSystem (
-      system: let
+      system:
+      let
         pkgs = nixpkgs.legacyPackages.${system};
         version = "v0.8";
-      in {
-        packages.default = pkgs.stdenv.mkDerivation {
-          pname = "cetris";
-          inherit version;
+      in
+      {
+        packages = {
+          # Derivation to build cetris
+          cetris = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
+            pname = "cetris";
+            inherit version;
 
-          src = ./.;
+            # Custom variable to control icons
+            enableIcon = "TRUE";
 
-          nativeBuildInputs = [
-            pkgs.spasm-ng
-            pkgs.convbin
-          ];
+            src = ./.;
 
-          buildPhase = ''
-            runHook preBuild
+            nativeBuildInputs = with pkgs; [
+              spasm-ng
+              convbin
+            ];
 
-            mkdir -p bin
+            buildPhase = ''
+              runHook preBuild
 
-            echo "Creating and building tests file"
-            cat test.asm graphic.asm > test_full.asm
-            spasm -E -T test_full.asm bin/TEST.8xp
+              mkdir bin
 
-            echo "Building tetrice_dat.asm"
-            cat tetrice_dat.asm > cetrisdt.asm
-            echo -e "versionString:\n .db \"${version}\",0\nversionStringEnd:\nversionStringSize = versionStringEnd-versionString" >> cetrisdt.asm
-            spasm -E -T cetrisdt.asm bin/CETRISDT.8xp || true
-            spasm -E -L cetrisdt.asm || true
-            convbin -j 8x -k 8xv -i bin/CETRISDT.8xp -o bin/CETrisDT.8xv -n CETrisDT
+              # Run the repo build script with corresponding arguments
+              ${./build.sh} ${version} ${finalAttrs.enableIcon}
 
-            echo "Creating and building CETRIS"
-            cat tetrice.asm graphic.asm > cetris.asm
-            spasm -E -T -DMETA=${version} cetris.asm bin/CETRIS.8xp
-            spasm -E -L cetris.asm
-            spasm -E -T cetris.asm
+              runHook postBuild
+            '';
 
-            echo "Build artifacts:"
-            ls -lh bin/CETRIS.8xp bin/CETrisDT.8xv
+            installPhase = ''
+              runHook preInstall
 
-            runHook postBuild
-          '';
+              mkdir -p $out
 
-          installPhase = ''
-            runHook preInstall
+              cp bin/CETRIS.8xp bin/CETrisDT.8xv $out
+              cp bin/TEST.8xp $out || true
 
-            mkdir -p $out
+              runHook postInstall
+            '';
+          });
 
-            cp bin/CETRIS.8xp bin/CETrisDT.8xv $out
-            cp bin/TEST.8xp $out || true
+          # Build cetris without an icon
+          cetris_without_icon = self.packages.${system}.cetris.overrideAttrs {
+            enableIcon = "";
+          };
 
-            runHook postInstall
-          '';
+          # Set the default package to cetris with an icon
+          default = self.packages.${system}.cetris;
         };
+
+        formatter = pkgs.nixfmt;
       }
     );
 }
